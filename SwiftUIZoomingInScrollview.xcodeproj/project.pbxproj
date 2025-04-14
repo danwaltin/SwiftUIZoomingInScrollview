@@ -11,7 +11,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		37E8D79B2DAC087E00D9768A /* SwiftUIZoomingInScrollview */ = {
+		37C87BBB2DAC142D002FC83D /* SwiftUIZoomingInScrollview */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = SwiftUIZoomingInScrollview;
 			sourceTree = "<group>";
@@ -32,7 +32,7 @@
 		37E8D7902DAC087E00D9768A = {
 			isa = PBXGroup;
 			children = (
-				37E8D79B2DAC087E00D9768A /* SwiftUIZoomingInScrollview */,
+				37C87BBB2DAC142D002FC83D /* SwiftUIZoomingInScrollview */,
 				37E8D79A2DAC087E00D9768A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -61,7 +61,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				37E8D79B2DAC087E00D9768A /* SwiftUIZoomingInScrollview */,
+				37C87BBB2DAC142D002FC83D /* SwiftUIZoomingInScrollview */,
 			);
 			name = SwiftUIZoomingInScrollview;
 			packageProductDependencies = (
