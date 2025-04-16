@@ -8,22 +8,26 @@
 import SwiftUI
 
 struct EditTracksView: View {
-    var zoomLevel = ZoomLevel(strategy: exponentialZoomStrategy)
+    var zoomLevel = ZoomLevel(strategy: linearZoomStrategy)
 
-    let trackCollection: TrackCollection
+    let mix: Mix
     
     var body: some View {
         VStack(spacing: 0) {
             GeometryReader { g in
-                TracksListView(tracks: trackCollection.tracks, containerSize: g.size)
+                TracksListView(
+                    tracks: mix.tracks,
+                    containerSize: g.size,
+                    zoomLevel: zoomLevel)
             }
             Divider()
             ZoomControl(zoomLevel: zoomLevel)
                 .padding()
+                .frame(maxWidth: 200)
         }
     }
 }
 
 #Preview {
-    EditTracksView(trackCollection: TrackCollection(name: "Collection name", tracks: []))
+    EditTracksView(mix: Mix(name: "Mix name", tracks: []))
 }

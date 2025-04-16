@@ -7,7 +7,7 @@
 
 import Foundation
 
-fileprivate let linearSlope = 2.0
+fileprivate let linearSlope = 0.5
 
 let linearZoomStrategy = LinearZoomStrategy(
     defaultInputValue: 1 / linearSlope,

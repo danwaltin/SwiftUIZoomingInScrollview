@@ -11,8 +11,8 @@ import SwiftUI
 struct ContentView: View {
     @State private var isLoadingTracks = true
 
-    @State private var trackCollections: [TrackCollection] = []
-    @State private var selectedTrackCollectionID: TrackCollection.ID?
+    @State private var mixes: [Mix] = []
+    @State private var selectedMixID: Mix.ID?
     
     var body: some View {
         content()
@@ -29,24 +29,24 @@ struct ContentView: View {
             Text("Loading tracks...")
         } else {
             NavigationSplitView {
-                Sidebar(selection: $selectedTrackCollectionID, tracksCollections: trackCollections)
+                Sidebar(selection: $selectedMixID, mixes: mixes)
             } detail: {
-                if let trackCollection = selectedTrackCollection {
-                    EditTracksView(trackCollection: trackCollection)
+                if let mix = selectedMix {
+                    EditTracksView(mix: mix)
                 } else {
                     Text("Select a mix.")
                 }
             }
-            .navigationTitle(selectedTrackCollection?.name ?? "(No selection)")
+            .navigationTitle(selectedMix?.name ?? "(No selection)")
         }
     }
     
-    private var selectedTrackCollection : TrackCollection? {
-        trackCollections.first(where: { $0.id == selectedTrackCollectionID })
+    private var selectedMix : Mix? {
+        mixes.first(where: { $0.id == selectedMixID })
     }
     
     private func loadTracks() async {
-        trackCollections = await TrackRepository.getAllTracksCollections()
+        mixes = await TrackRepository   .getMixes()
     }
 }
 

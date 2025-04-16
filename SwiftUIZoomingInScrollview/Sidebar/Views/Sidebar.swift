@@ -8,17 +8,17 @@
 import SwiftUI
 
 struct Sidebar: View {
-    @Binding var selection: TrackCollection.ID?
+    @Binding var selection: Mix.ID?
     
-    let tracksCollections: [TrackCollection]
+    let mixes: [Mix]
     
     var body: some View {
-        List(tracksCollections, selection: $selection) { collection in
-            Text(collection.name)
+        List(mixes, selection: $selection) { mix in
+            Text(mix.name)
         }
     }
 }
 
 #Preview {
-    Sidebar(selection: .constant(nil), tracksCollections: [])
+    Sidebar(selection: .constant(nil), mixes: [])
 }

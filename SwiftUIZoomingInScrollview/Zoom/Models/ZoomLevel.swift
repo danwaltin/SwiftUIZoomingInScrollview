@@ -19,9 +19,6 @@ fileprivate let defaultZoomStrategy = LinearZoomStrategy(
     inputValueRange: .init(lowerBound: 0.1, upperBound: 4.0),
     inputValueStep: 0.5)
 
-
-
-
 @Observable
 class ZoomLevel {
     var inputRange: ClosedRange<Double> {

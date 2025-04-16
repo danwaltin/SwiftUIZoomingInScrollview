@@ -11,5 +11,7 @@ struct Track: Identifiable {
     let id: Int
     let name: String
     let startPosition: Double
-    let width: Double
+    let length: TimeInterval
+    
+    let visualizations: TrackVisualizations
 }
