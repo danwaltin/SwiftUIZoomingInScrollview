@@ -13,10 +13,10 @@ func createLogger(category: String) -> Logger {
 
 fileprivate let logTimeLogger = createLogger(category: "logTime")
 
-func logTime<T>(_ name: String, action: () -> T) -> T{
+func logTime<T>(_ name: String, action: () async -> T) async -> T{
     let start = DispatchTime.now()
     
-    let result = action()
+    let result = await action()
     
     let end = DispatchTime.now()
     

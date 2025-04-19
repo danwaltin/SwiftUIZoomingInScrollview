@@ -9,9 +9,12 @@ import Foundation
 import AppKit
 
 struct TrackRepository {
-    static func getMixes() -> [Mix] {
-        let tracks = logTime("Load tracks", action: {
-            loadTracksSequentially([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])})
+    static func getMixes() async -> [Mix] {
+//        let tracks = await logTime("Load tracks", action: {
+//            loadTracksSequentially([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])})
+//
+        let tracks = await logTime("Load tracks", action: {
+            await loadTracksParallel([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])})
         
         return [
             mix(withTracks:[1], allTracks: tracks),
@@ -37,22 +40,11 @@ struct TrackRepository {
         return .init(name: name, tracks: tracks)
     }
     
-    private static func mixSequentially(_ name: String, trackIDs: [Int]) -> Mix {
-        let tracks = loadTracksSequentially(trackIDs)
-        
-        return .init(name: name, tracks: tracks)
-    }
-
-//    private static func mixParallel(_ name: String, trackIDs: [Int]) -> Mix {
-//        let tracks = loadTracksParallel(trackIDs)
-//        
-//        return .init(name: name, tracks: tracks)
-//    }
-    
     private static func loadTracksSequentially(_ trackIDs: [Int]) -> [Track] {
         var tracks = [Track]()
         for trackId in trackIDs {
-            let track = loadTrack(trackId)
+            let visualizations = visualizations(for: trackId)
+            let track = track(witId: trackId, visualizations: visualizations)
             tracks.append(track)
         }
         
@@ -60,29 +52,27 @@ struct TrackRepository {
     }
 
     private static func loadTracksParallel(_ trackIDs: [Int]) async -> [Track] {
-        await withTaskGroup(of: TrackVisualizations.self) { group in
-                for trackId in trackIDs {
-                    group.addTask {
-                        visualizations(for: trackId)
-                    }
-                }
-
-                for await result in group {
-                    print("Resultat:", result)
+        return await withTaskGroup(of: (trackId: Int, visualizations: TrackVisualizations).self) { group in
+            for trackId in trackIDs {
+                group.addTask {
+                    let v = await logTime(
+                        "Load visualizations for track \(trackId)",
+                        action: { visualizations(for: trackId)})
+                    return (trackId, v)
                 }
             }
-        var tracks = [Track]()
-        for trackId in trackIDs {
-            let track = loadTrack(trackId)
-            tracks.append(track)
+            
+            var tracks = [Track]()
+            for await visualizations in group {
+                let track = track(witId: visualizations.trackId, visualizations: visualizations.visualizations)
+                tracks.append(track)
+            }
+            return tracks
         }
-        
-        return tracks
     }
 
-    private static func loadTrack(_ id: Int) -> Track {
-        let track = tracks[id]
-        let visualizations = visualizations(for: id)
+    private static func track(witId id: Int,visualizations: TrackVisualizations) -> Track {
+        let track = tracksDatabase[id]
         
         return .init(
             id: id,
@@ -120,7 +110,7 @@ struct TrackRepository {
 
 fileprivate let visualizationLevels = [1, 2, 4, 6, 12, 18, 25, 30, 45, 50, 70, 90]
 
-fileprivate var tracks: [Int: (name: String, length: TimeInterval)] = [
+fileprivate var tracksDatabase: [Int: (name: String, length: TimeInterval)] = [
     1: ("Always Look On the Bright Side of Life",  2.min +  8.sec),
     2: ("Blinn Ulof",                              4.min +  4.sec),
     3: ("Bjekkergauken",                           2.min + 34.sec),
