@@ -9,7 +9,7 @@ import Foundation
 import AppKit
 
 struct TrackRepository {
-    static func getMixes() async -> [Mix] {
+    func getMixes() async -> [Mix] {
 //        let tracks = await logTime("Load tracks", action: {
 //            loadTracksSequentially([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])})
 //
@@ -24,7 +24,7 @@ struct TrackRepository {
         ]
     }
     
-    private static func mix(withTracks trackIds: [Int], allTracks: [Track]) -> Mix {
+    private func mix(withTracks trackIds: [Int], allTracks: [Track]) -> Mix {
         var tracks = [Track]()
             
         var position = 0.0
@@ -40,7 +40,7 @@ struct TrackRepository {
         return .init(name: name, tracks: tracks)
     }
     
-    private static func loadTracksSequentially(_ trackIDs: [Int]) -> [Track] {
+    private func loadTracksSequentially(_ trackIDs: [Int]) -> [Track] {
         var tracks = [Track]()
         for trackId in trackIDs {
             let visualizations = visualizations(for: trackId)
@@ -51,7 +51,7 @@ struct TrackRepository {
         return tracks
     }
 
-    private static func loadTracksParallel(_ trackIDs: [Int]) async -> [Track] {
+    private func loadTracksParallel(_ trackIDs: [Int]) async -> [Track] {
         return await withTaskGroup(of: (trackId: Int, visualizations: TrackVisualizations).self) { group in
             for trackId in trackIDs {
                 group.addTask {
@@ -71,7 +71,7 @@ struct TrackRepository {
         }
     }
 
-    private static func track(witId id: Int,visualizations: TrackVisualizations) -> Track {
+    private func track(witId id: Int,visualizations: TrackVisualizations) -> Track {
         let track = tracksDatabase[id]
         
         return .init(
@@ -81,7 +81,7 @@ struct TrackRepository {
             visualizations: visualizations)
     }
     
-    private static func visualizations(for trackId: Int) -> TrackVisualizations {
+    private func visualizations(for trackId: Int) -> TrackVisualizations {
         var v = [Int: [TrackVisualizationValue]]()
         for level in visualizationLevels {
             if let jsonData = json(trackId: trackId, visualizationLevel: level) {
@@ -95,7 +95,7 @@ struct TrackRepository {
         return .init(visualizations: v)
     }
     
-    private static func json(trackId: Int, visualizationLevel: Int) -> Data? {
+    private func json(trackId: Int, visualizationLevel: Int) -> Data? {
         let asset = "TrackVisualizations/\(trackId)/\(visualizationLevel)"
         if let asset = NSDataAsset(name: asset, bundle: Bundle.main) {
             return asset.data
