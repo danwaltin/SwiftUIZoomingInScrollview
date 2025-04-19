@@ -7,7 +7,8 @@
 
 import SwiftUI
 
-fileprivate struct VisualizationPath {
+fileprivate struct VisualizationPath: Identifiable {
+    let id: Int
     let stroke: Path
     let fill: Path
 }
@@ -27,53 +28,17 @@ struct TrackVisualizationView: View {
     let zoomLevel: Int
     let trackContentHeight: Double
     
-    @State private var isVisible = false
-    
     var body: some View {
-        let path = trackVisualizationPath(values: visualizations.visualizations[zoomLevel]!)
-        content()
-            .onScrollVisibilityChange(threshold: 0.01) {
-                isVisible = $0
-            }
+        let paths = visualizations.paths(
+            forZoomLevel: zoomLevel,
+            trackContentHeight: trackContentHeight)
+        HStack(spacing: 0) {
+            ForEach(paths) {
+                TrackVisualizationGraph(path: $0)
 
-    }
-
-    @ViewBuilder
-    private func content() -> some View {
-        if isVisible {
-            let path = trackVisualizationPath(values: visualizations.visualizations[zoomLevel]!)
-            TrackVisualizationGraph(path: path)
-                .scaleEffect(y: -1)
-        } else {
-            Color.clear
-        }
-    }
-
-    private func trackVisualizationPath(values: [TrackVisualizationValue]) -> VisualizationPath {
-        guard let first = values.first, let last = values.last else {
-            return .init(stroke: Path(), fill: Path())
-        }
-
-        let stroke = Path { path in
-            path.move(to: first.asDisplayPoint(trackHeight: trackContentHeight))
-            
-            for value in values {
-                path.addLine(to: value.asDisplayPoint(trackHeight: trackContentHeight))
             }
         }
-        
-        let fill = Path { path in
-            path.move(to: first.asBaselinePoint())
-            path.addLine(to: first.asDisplayPoint(trackHeight: trackContentHeight))
-            
-            for value in values {
-                path.addLine(to: value.asDisplayPoint(trackHeight: trackContentHeight))
-            }
 
-            path.addLine(to: last.asBaselinePoint())
-        }
-        
-        return .init(stroke: stroke, fill: fill)
     }
 }
 
@@ -94,13 +59,29 @@ fileprivate struct TrackVisualizationGraph: View {
 
     let path: VisualizationPath
 
+    @State private var isVisible = false
+
     var body: some View {
-        ZStack {
-            TrackVisualizationShape(path: path.fill)
-                .fill(Self.mainGradient)
-            TrackVisualizationShape(path: path.stroke)
-                .stroke(Self.mainStrokeColor, lineWidth: 0.5)
+        content()
+            .onScrollVisibilityChange(threshold: 0.01) {
+                isVisible = $0
+            }
+    }
+    
+    @ViewBuilder
+    private func content() -> some View {
+        if isVisible {
+            ZStack {
+                TrackVisualizationShape(path: path.fill)
+                    .fill(Self.mainGradient)
+                TrackVisualizationShape(path: path.stroke)
+                    .stroke(Self.mainStrokeColor, lineWidth: 0.5)
+            }
+            .scaleEffect(y: -1)
+        } else {
+            Color.clear
         }
+
     }
 }
 
@@ -119,3 +100,37 @@ struct TrackVisualizationShape: Shape {
     }
 }
 
+fileprivate extension TrackVisualizations {
+    func paths(forZoomLevel level: Int, trackContentHeight: Double) -> [VisualizationPath] {
+        if let visualizations = self.visualizations.first(where: { $0.zoomLevel == level }) {
+            let values = visualizations.values
+            guard let first = values.first, let last = values.last else {
+                return []
+            }
+
+            let stroke = Path { path in
+                path.move(to: first.asDisplayPoint(trackHeight: trackContentHeight))
+                
+                for value in values {
+                    path.addLine(to: value.asDisplayPoint(trackHeight: trackContentHeight))
+                }
+            }
+            
+            let fill = Path { path in
+                path.move(to: first.asBaselinePoint())
+                path.addLine(to: first.asDisplayPoint(trackHeight: trackContentHeight))
+                
+                for value in values {
+                    path.addLine(to: value.asDisplayPoint(trackHeight: trackContentHeight))
+                }
+
+                path.addLine(to: last.asBaselinePoint())
+            }
+            
+            return [.init(id: 0, stroke: stroke, fill: fill)]
+
+        }
+        
+        return []
+    }
+}

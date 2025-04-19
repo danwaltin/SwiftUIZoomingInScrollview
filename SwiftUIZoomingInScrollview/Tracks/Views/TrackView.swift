@@ -34,7 +34,12 @@ struct TrackView: View {
     }
     
     var zoomLevel: Int {
-        track.visualizations.visualizations.keys.sorted().first(where: {$0 >= Int(zoom)}) ?? 1
+        track
+            .visualizations
+            .visualizations
+            .sorted()
+            .first(where: {$0.zoomLevel >= Int(zoom)})?
+            .zoomLevel ?? 1
     }
 }
 

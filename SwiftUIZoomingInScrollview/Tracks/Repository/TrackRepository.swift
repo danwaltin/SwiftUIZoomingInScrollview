@@ -65,10 +65,10 @@ struct TrackRepository {
     }
     
     private func visualizations(for trackId: Int) async -> TrackVisualizations {
-        var v = [Int: [TrackVisualizationValue]]()
+        var v = [TrackVisualizationZoomLevel]()
         for level in visualizationLevels {
             if let values = values(trackId: trackId, visualizationLevel: level) {
-                v[level] = values
+                v.append(.init(zoomLevel: level, values: values))
             }
         }
         
