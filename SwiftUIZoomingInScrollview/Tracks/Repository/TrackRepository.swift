@@ -10,9 +10,6 @@ import AppKit
 
 struct TrackRepository {
     func getMixes() async -> [Mix] {
-//        let tracks = await logTime("Load tracks", action: {
-//            loadTracksSequentially([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])})
-//
         let tracks = await logTime("Load tracks", action: {
             await loadTracksParallel([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])})
         
@@ -40,24 +37,13 @@ struct TrackRepository {
         return .init(name: name, tracks: tracks)
     }
     
-    private func loadTracksSequentially(_ trackIDs: [Int]) -> [Track] {
-        var tracks = [Track]()
-        for trackId in trackIDs {
-            let visualizations = visualizations(for: trackId)
-            let track = track(witId: trackId, visualizations: visualizations)
-            tracks.append(track)
-        }
-        
-        return tracks
-    }
-
     private func loadTracksParallel(_ trackIDs: [Int]) async -> [Track] {
-        return await withTaskGroup(of: (trackId: Int, visualizations: TrackVisualizations).self) { group in
+        await withTaskGroup(of: (trackId: Int, visualizations: TrackVisualizations).self) { group in
             for trackId in trackIDs {
                 group.addTask {
                     let v = await logTime(
                         "Load visualizations for track \(trackId)",
-                        action: { visualizations(for: trackId)})
+                        action: { await visualizations(for: trackId)})
                     return (trackId, v)
                 }
             }
@@ -81,29 +67,24 @@ struct TrackRepository {
             visualizations: visualizations)
     }
     
-    private func visualizations(for trackId: Int) -> TrackVisualizations {
+    private func visualizations(for trackId: Int) async -> TrackVisualizations {
         var v = [Int: [TrackVisualizationValue]]()
         for level in visualizationLevels {
-            if let jsonData = json(trackId: trackId, visualizationLevel: level) {
-                
-                if let blogPosts: [TrackVisualizationValue] = try? JSONDecoder().decode([TrackVisualizationValue].self, from: jsonData) {
-                    v[level] = blogPosts
-                }
+            if let values = values(trackId: trackId, visualizationLevel: level) {
+                v[level] = values
             }
         }
         
         return .init(visualizations: v)
     }
     
-    private func json(trackId: Int, visualizationLevel: Int) -> Data? {
+    private func values(trackId: Int, visualizationLevel: Int) -> [TrackVisualizationValue]? {
         let asset = "TrackVisualizations/\(trackId)/\(visualizationLevel)"
         if let asset = NSDataAsset(name: asset, bundle: Bundle.main) {
-            return asset.data
+            return try? JSONDecoder().decode([TrackVisualizationValue].self, from: asset.data)
         }
-        else {
-            print("Asset \(asset) not found")
-        }
-        
+
+        print("Asset \(asset) not found")
         return nil
     }
 }
