@@ -8,34 +8,33 @@
 import SwiftUI
 
 struct TrackView: View {
-    let name: String
-    let startPosition: Double
-    let width: Double
+    let track: Track
     let height: Double
+    let zoom: Double
     
     var body: some View {
         HStack(spacing: 0) {
-            Color.clear
-                .frame(width: startPosition)
-            
             ZStack(alignment: .top) {
                 Rectangle()
                     .fill(Color.gray.opacity(0.2))
-                Text(name)
+                TrackVisualizationView(
+                    visualizations: track.visualizations,
+                    zoomLevel: zoomLevel,
+                    trackContentHeight: height)
+                Text(track.name)
                     .padding(5)
                     
             }
-            .frame(width: width, height: height)
+            .frame(width: track.length * zoom, height: height)
             .clipShape(RoundedRectangle(cornerRadius: 6))
+            
+            Spacer(minLength: 0)
         }
+        .offset(x: track.startPosition * zoom)
+    }
+    
+    var zoomLevel: Int {
+        track.visualizations.visualizations.keys.sorted().first(where: {$0 >= Int(zoom)}) ?? 1
     }
 }
 
-#Preview {
-    TrackView(
-        name: "Track 1",
-        startPosition: 0,
-        width: 100,
-        height: 100)
-    .padding(10)
-}

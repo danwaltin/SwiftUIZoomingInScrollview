@@ -8,20 +8,17 @@
 import SwiftUI
 
 struct EditTracksView: View {
-    var zoomLevel = ZoomLevel(strategy: linearZoomStrategy)
+    @State var zoom = Zoom(strategy: linearZoomStrategy)
 
     let mix: Mix
     
     var body: some View {
         VStack(spacing: 0) {
-            GeometryReader { g in
-                TracksListView(
-                    tracks: mix.tracks,
-                    containerSize: g.size,
-                    zoomLevel: zoomLevel)
-            }
+            TracksListView(
+                tracks: mix.tracks,
+                zoom: zoom)
             Divider()
-            ZoomControl(zoomLevel: zoomLevel)
+            ZoomControl(zoom: zoom)
                 .padding()
                 .frame(maxWidth: 200)
         }

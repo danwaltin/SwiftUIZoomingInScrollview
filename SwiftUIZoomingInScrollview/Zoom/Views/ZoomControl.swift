@@ -8,32 +8,32 @@
 import SwiftUI
 
 struct ZoomControl: View {
-    @Bindable var zoomLevel: ZoomLevel
+    @Bindable var zoom: Zoom
 
     var body: some View {
         HStack {
-            Button(action: {zoomLevel.zoomOut()}) {
+            Button(action: {zoom.zoomOut()}) {
                 Image(systemName: "minus")
             }
             .buttonStyle(.borderless)
             
             Slider(
-                value: $zoomLevel.inputValue,
-                in: zoomLevel.inputRange,
+                value: $zoom.inputValue,
+                in: zoom.inputRange,
                 label: {EmptyView()},
                 minimumValueLabel: {EmptyView()},
                 maximumValueLabel: {EmptyView()},
                 onEditingChanged: {
-                    zoomLevel.isContinouslyEditing = $0
+                    zoom.isContinouslyEditing = $0
                 }
             )
             
-            Button(action: {zoomLevel.zoomIn()}) {
+            Button(action: {zoom.zoomIn()}) {
                 Image(systemName: "plus")
             }
             .buttonStyle(.borderless)
 
-            Text("\(zoomLevel.value, format: .number.precision(.fractionLength(1)))")
+            Text("\(zoom.value, format: .number.precision(.fractionLength(1)))")
                 .font(.footnote)
                 .monospacedDigit()
         }
@@ -42,5 +42,5 @@ struct ZoomControl: View {
 }
 
 #Preview {
-    ZoomControl(zoomLevel: ZoomLevel())
+    ZoomControl(zoom: Zoom())
 }

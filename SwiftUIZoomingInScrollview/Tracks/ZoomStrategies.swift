@@ -7,14 +7,14 @@
 
 import Foundation
 
-fileprivate let linearSlope = 0.5
+fileprivate let linearSlope = 1.0
 
 let linearZoomStrategy = LinearZoomStrategy(
     defaultInputValue: 1 / linearSlope,
     inputValueRange: ZoomRange(
-        lowerBound: 0.5 / linearSlope,
+        lowerBound: 1.0 / linearSlope,
         upperBound: 90 / linearSlope),
-    inputValueStep: 0.5,
+    inputValueStep: 1,
     slope: linearSlope)
 
 let exponentialZoomStrategy = ExponentialZoomStrategy(

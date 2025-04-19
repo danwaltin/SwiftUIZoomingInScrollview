@@ -1,5 +1,5 @@
 //
-//  ZoomLevel.swift
+//  Zoom.swift
 //  SwiftUIZoomingInScrollview
 //
 //  Created by Dan Waltin on 2025-04-13.
@@ -20,7 +20,7 @@ fileprivate let defaultZoomStrategy = LinearZoomStrategy(
     inputValueStep: 0.5)
 
 @Observable
-class ZoomLevel {
+class Zoom {
     var inputRange: ClosedRange<Double> {
         strategy.inputValueRange.lowerBound...strategy.inputValueRange.upperBound
     }

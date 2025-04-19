@@ -11,8 +11,7 @@ fileprivate let tracksHeight: Double = 100
 
 struct TracksListView: View {
     let tracks: [Track]
-    let containerSize: CGSize
-    @Bindable var zoomLevel: ZoomLevel
+    @Bindable var zoom: Zoom
     
     @State private var zoomAnchorViewPortOffset: Double = 0
     @State private var isPinchZooming = false
@@ -25,33 +24,39 @@ struct TracksListView: View {
     @State private var scrollToPosition: ScrollPosition = .init(edge: .top)
 
     var body: some View {
-        ScrollView([.horizontal, .vertical]) {
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(tracks) { t in
-                    TrackView(
-                        name: t.name,
-                        startPosition: t.startPosition * zoomLevel.value,
-                        width: t.length * zoomLevel.value,
-                        height: tracksHeight)
+        GeometryReader { g in
+            let heightBelowTracks = max(0, g.size.height - (Double(tracks.count) * tracksHeight))
+            
+            let widthRightOfTracks = max(0, g.size.width - tracksWidth)
+
+            
+            ScrollView([.horizontal, .vertical]) {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(tracks) {
+                        TrackView(
+                            track: $0,
+                            height: tracksHeight,
+                            zoom: zoom.value)
+                    }
+                    Rectangle()
+                        .foregroundStyle(.clear)
+                        .frame(width: tracksWidth + widthRightOfTracks, height: heightBelowTracks)
                 }
-                Rectangle()
-                    .foregroundStyle(.clear)
-                    .frame(width: tracksWidth + widthRightOfTracks, height: heightBelowTracks)
             }
-        }
-        .gesture(pinchToZoom)
-        .scrollPosition($scrollToPosition)
-        .onChange(of: zoomLevel.value) {
-            zoomChanged(oldZoom: $0, newZoom: $1)
-        }
-        .onScrollGeometryChange(for: ScrollData.self) {
-            scrollData(from: $0)
-        } action: { oldValue, newValue in
-            if oldValue != newValue {
-                scrollData = newValue
+            .gesture(pinchToZoom)
+            .scrollPosition($scrollToPosition)
+            .onChange(of: zoom.value) {
+                zoomChanged(oldZoom: $0, newZoom: $1)
             }
+            .onScrollGeometryChange(for: ScrollData.self) {
+                scrollData(from: $0)
+            } action: { oldValue, newValue in
+                if oldValue != newValue {
+                    scrollData = newValue
+                }
+            }
+            .padding(0)
         }
-        .padding(0)
     }
 
     private func scrollData(from g: ScrollGeometry) -> ScrollData {
@@ -78,52 +83,24 @@ struct TracksListView: View {
         MagnifyGesture()
             .onChanged { value in
                 if pinchStart == 0 { // detect when we start a new pinch gesture
-                    pinchStart = zoomLevel.inputValue
+                    pinchStart = zoom.inputValue
                     isPinchZooming = true
-                    zoomLevel.isContinouslyEditing = true
+                    zoom.isContinouslyEditing = true
                     zoomAnchorViewPortOffset = value.startLocation.x
                 }
                 
-                zoomLevel.changeZoom(to: value.magnification * pinchStart)
+                zoom.changeZoom(to: value.magnification * pinchStart)
             }
             .onEnded { _ in
                 pinchStart = 0
                 isPinchZooming = false
-                zoomLevel.isContinouslyEditing = false
+                zoom.isContinouslyEditing = false
             }
-    }
-
-    private var heightBelowTracks: Double {
-        max(0, containerSize.height - (Double(tracks.count) * tracksHeight))
-    }
-    
-    private var widthRightOfTracks: Double {
-        max(0, containerSize.width - tracksWidth)
     }
     
     private var tracksWidth: Double {
-        tracks.reduce(0) { $0 + $1.length * zoomLevel.value }
+        tracks.reduce(0) { $0 + $1.length * zoom.value }
     }
-}
-
-#Preview {
-    TracksListView(
-        tracks: [
-            Track(
-                id: 1,
-                name: "Track 1",
-                startPosition: 0,
-                length: 1.min + 30.sec,
-                visualizations: TrackVisualizations(visualizations: [:])),
-            Track(
-                id: 2,
-                name: "Track 2",
-                startPosition: 100,
-                length: 2.min + 30.sec,
-                visualizations: TrackVisualizations(visualizations: [:])),
-        ],
-        containerSize: .init(width: 300, height: 250),
-        zoomLevel: ZoomLevel())
 }
 
 struct ScrollData: Equatable {
