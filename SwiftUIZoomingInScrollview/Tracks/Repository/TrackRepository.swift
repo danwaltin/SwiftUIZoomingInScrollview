@@ -9,35 +9,84 @@ import Foundation
 import AppKit
 
 struct TrackRepository {
-    static func getMixes() async -> [Mix] {
+    static func getMixes() -> [Mix] {
+        let tracks = logTime("Load tracks", action: {
+            loadTracksSequentially([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])})
+        
         return [
-            await mix("1 track", trackIDs: [1]),
-            await mix("2 tracks", trackIDs: [2, 3]),
-            await mix("3 tracks", trackIDs: [4, 5, 6]),
-            await mix("13 tracks", trackIDs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+            mix(withTracks:[1], allTracks: tracks),
+            mix(withTracks:[2, 3], allTracks: tracks),
+            mix(withTracks:[4, 5, 6], allTracks: tracks),
+            mix(withTracks:[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], allTracks: tracks)
         ]
     }
     
-    private static func mix(_ name: String, trackIDs: [Int]) async -> Mix {
+    private static func mix(withTracks trackIds: [Int], allTracks: [Track]) -> Mix {
         var tracks = [Track]()
+            
         var position = 0.0
-        for trackId in trackIDs {
-            let track = await loadTrack(trackId, startPosition: position)
-            tracks.append(track)
-            position += track.length
+        for trackId in trackIds {
+            if var track = allTracks.first(where: { $0.id == trackId }) {
+                track.startPosition = position
+                tracks.append(track)
+                position += track.length
+            }
         }
-        
+
+        let name = tracks.count != 1 ? "\(tracks.count) tracks" : "1 track"
         return .init(name: name, tracks: tracks)
     }
     
-    private static func loadTrack(_ id: Int, startPosition: Double) async -> Track {
+    private static func mixSequentially(_ name: String, trackIDs: [Int]) -> Mix {
+        let tracks = loadTracksSequentially(trackIDs)
+        
+        return .init(name: name, tracks: tracks)
+    }
+
+//    private static func mixParallel(_ name: String, trackIDs: [Int]) -> Mix {
+//        let tracks = loadTracksParallel(trackIDs)
+//        
+//        return .init(name: name, tracks: tracks)
+//    }
+    
+    private static func loadTracksSequentially(_ trackIDs: [Int]) -> [Track] {
+        var tracks = [Track]()
+        for trackId in trackIDs {
+            let track = loadTrack(trackId)
+            tracks.append(track)
+        }
+        
+        return tracks
+    }
+
+    private static func loadTracksParallel(_ trackIDs: [Int]) async -> [Track] {
+        await withTaskGroup(of: TrackVisualizations.self) { group in
+                for trackId in trackIDs {
+                    group.addTask {
+                        visualizations(for: trackId)
+                    }
+                }
+
+                for await result in group {
+                    print("Resultat:", result)
+                }
+            }
+        var tracks = [Track]()
+        for trackId in trackIDs {
+            let track = loadTrack(trackId)
+            tracks.append(track)
+        }
+        
+        return tracks
+    }
+
+    private static func loadTrack(_ id: Int) -> Track {
         let track = tracks[id]
         let visualizations = visualizations(for: id)
         
         return .init(
             id: id,
             name: track?.name ?? "Unknown",
-            startPosition: startPosition,
             length: track?.length ?? 100,
             visualizations: visualizations)
     }

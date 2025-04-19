@@ -17,7 +17,7 @@ struct ContentView: View {
     var body: some View {
         content()
             .task {
-                await loadTracks()
+                loadTracks()
                 isLoadingTracks = false
             }
     }
@@ -45,8 +45,8 @@ struct ContentView: View {
         mixes.first(where: { $0.id == selectedMixID })
     }
     
-    private func loadTracks() async {
-        mixes = await TrackRepository   .getMixes()
+    private func loadTracks() {
+        mixes = TrackRepository.getMixes()
     }
 }
 
