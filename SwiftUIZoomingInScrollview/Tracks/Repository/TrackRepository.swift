@@ -10,8 +10,7 @@ import AppKit
 
 struct TrackRepository {
     func getMixes() async -> [Mix] {
-        let tracks = await logTime("Load tracks", action: {
-            await loadTracksParallel([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])})
+        let tracks = await loadTracksParallel([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
         
         return [
             mix(withTracks:[1], allTracks: tracks),
@@ -41,9 +40,7 @@ struct TrackRepository {
         await withTaskGroup(of: (trackId: Int, visualizations: TrackVisualizations).self) { group in
             for trackId in trackIDs {
                 group.addTask {
-                    let v = await logTime(
-                        "Load visualizations for track \(trackId)",
-                        action: { await visualizations(for: trackId)})
+                    let v = await visualizations(for: trackId)
                     return (trackId, v)
                 }
             }
