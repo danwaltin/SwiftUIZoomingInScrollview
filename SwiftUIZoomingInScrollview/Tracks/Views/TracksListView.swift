@@ -62,8 +62,7 @@ struct TracksListView: View {
     private func scrollData(from g: ScrollGeometry) -> ScrollData {
         .init(viewPosition: .init(x: g.contentOffset.x,
                                   y: g.contentOffset.y + g.contentInsets.top),
-              viewRect: g.visibleRect,
-              contentInsets: g.contentInsets)
+              viewRect: g.visibleRect)
     }
 
     private func zoomChanged(oldZoom: Double, newZoom: Double) {
@@ -106,9 +105,8 @@ struct TracksListView: View {
 struct ScrollData: Equatable {
     let viewPosition: CGPoint
     let viewRect: CGRect
-    let contentInsets: EdgeInsets
     
     static var zero: ScrollData {
-        .init(viewPosition: .zero, viewRect: .zero, contentInsets: .init())
+        .init(viewPosition: .zero, viewRect: .zero)
     }
 }
