@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-fileprivate let tracksHeight: Double = 100
+fileprivate let tracksHeight: Double = 150
 
 struct TracksListView: View {
     let tracks: [Track]
@@ -23,6 +23,14 @@ struct TracksListView: View {
     /// Helper to scroll using code
     @State private var scrollToPosition: ScrollPosition = .init(edge: .top)
 
+    @State private var initialScrollOffsetX = 0.0
+    @State private var scrollOffsetX = 0.0
+    
+    init (tracks: [Track], zoom: Zoom) {
+        self.tracks = tracks
+        self.zoom = zoom
+    }
+
     var body: some View {
         GeometryReader { g in
             let heightBelowTracks = max(0, g.size.height - (Double(tracks.count) * tracksHeight))
@@ -33,7 +41,7 @@ struct TracksListView: View {
             ScrollView([.horizontal, .vertical]) {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(tracks) {
-                        TrackView(
+                        TrackRowView(
                             track: $0,
                             height: tracksHeight,
                             zoom: zoom.value)
@@ -42,6 +50,7 @@ struct TracksListView: View {
                         .foregroundStyle(.clear)
                         .frame(width: tracksWidth + widthRightOfTracks, height: heightBelowTracks)
                 }
+                .offset(x: -scrollOffsetX)
             }
             .gesture(pinchToZoom)
             .scrollPosition($scrollToPosition)
@@ -62,17 +71,21 @@ struct TracksListView: View {
     private func scrollData(from g: ScrollGeometry) -> ScrollData {
         .init(viewPosition: .init(x: g.contentOffset.x,
                                   y: g.contentOffset.y + g.contentInsets.top),
-              viewRect: g.visibleRect,
-              contentInsets: g.contentInsets)
+              viewRect: g.visibleRect)
     }
 
     private func zoomChanged(oldZoom: Double, newZoom: Double) {
-        if !isPinchZooming {
-            // zoom from the middle of the visible part
-            zoomAnchorViewPortOffset = scrollData.viewRect.size.width / 2
+        let zoomFactor = newZoom / oldZoom
+
+        if isPinchZooming {
+            let newScrollXPosition = zoomFactor * (scrollOffsetX + zoomAnchorViewPortOffset) - zoomAnchorViewPortOffset
+            scrollOffsetX = newScrollXPosition
+            return
         }
         
-        let zoomFactor = newZoom / oldZoom
+        // zoom from the middle of the visible part
+        zoomAnchorViewPortOffset = scrollData.viewRect.size.width / 2
+        
         
         let newScrollXPosition = zoomFactor * (scrollData.viewPosition.x + zoomAnchorViewPortOffset) - zoomAnchorViewPortOffset
 
@@ -86,7 +99,7 @@ struct TracksListView: View {
                     pinchStart = zoom.inputValue
                     isPinchZooming = true
                     zoom.isContinouslyEditing = true
-                    zoomAnchorViewPortOffset = value.startLocation.x
+                    zoomAnchorViewPortOffset = scrollData.viewPosition.x + value.startLocation.x
                 }
                 
                 zoom.changeZoom(to: value.magnification * pinchStart)
@@ -95,6 +108,9 @@ struct TracksListView: View {
                 pinchStart = 0
                 isPinchZooming = false
                 zoom.isContinouslyEditing = false
+                let newScrollX = scrollOffsetX + scrollData.viewPosition.x
+                scrollOffsetX = 0
+                scrollToPosition.scrollTo(point: .init(x: newScrollX, y: scrollData.viewPosition.y))
             }
     }
     
@@ -106,9 +122,8 @@ struct TracksListView: View {
 struct ScrollData: Equatable {
     let viewPosition: CGPoint
     let viewRect: CGRect
-    let contentInsets: EdgeInsets
     
     static var zero: ScrollData {
-        .init(viewPosition: .zero, viewRect: .zero, contentInsets: .init())
+        .init(viewPosition: .zero, viewRect: .zero)
     }
 }

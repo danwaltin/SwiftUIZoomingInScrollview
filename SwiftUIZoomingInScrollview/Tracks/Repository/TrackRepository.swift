@@ -9,69 +9,86 @@ import Foundation
 import AppKit
 
 struct TrackRepository {
-    static func getMixes() async -> [Mix] {
+    func getMixes() async -> [Mix] {
+        let tracks = await loadTracksParallel([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+        
         return [
-            await mix("1 track", trackIDs: [1]),
-            await mix("2 tracks", trackIDs: [2, 3]),
-            await mix("3 tracks", trackIDs: [4, 5, 6]),
-            await mix("13 tracks", trackIDs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+            mix(withTracks:[1], allTracks: tracks),
+            mix(withTracks:[2, 3], allTracks: tracks),
+            mix(withTracks:[4, 5, 6], allTracks: tracks),
+            mix(withTracks:[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], allTracks: tracks)
         ]
     }
     
-    private static func mix(_ name: String, trackIDs: [Int]) async -> Mix {
+    private func mix(withTracks trackIds: [Int], allTracks: [Track]) -> Mix {
         var tracks = [Track]()
+            
         var position = 0.0
-        for trackId in trackIDs {
-            let track = await loadTrack(trackId, startPosition: position)
-            tracks.append(track)
-            position += track.length
+        for trackId in trackIds {
+            if var track = allTracks.first(where: { $0.id == trackId }) {
+                track.startPosition = position
+                tracks.append(track)
+                position += track.length
+            }
         }
-        
+
+        let name = tracks.count != 1 ? "\(tracks.count) tracks" : "1 track"
         return .init(name: name, tracks: tracks)
     }
     
-    private static func loadTrack(_ id: Int, startPosition: Double) async -> Track {
-        let track = tracks[id]
-        let visualizations = visualizations(for: id)
+    private func loadTracksParallel(_ trackIDs: [Int]) async -> [Track] {
+        await withTaskGroup(of: (trackId: Int, visualizations: TrackVisualizations).self) { group in
+            for trackId in trackIDs {
+                group.addTask {
+                    let v = await visualizations(for: trackId)
+                    return (trackId, v)
+                }
+            }
+            
+            var tracks = [Track]()
+            for await visualizations in group {
+                let track = track(witId: visualizations.trackId, visualizations: visualizations.visualizations)
+                tracks.append(track)
+            }
+            return tracks
+        }
+    }
+
+    private func track(witId id: Int,visualizations: TrackVisualizations) -> Track {
+        let track = tracksDatabase[id]
         
         return .init(
             id: id,
             name: track?.name ?? "Unknown",
-            startPosition: startPosition,
             length: track?.length ?? 100,
             visualizations: visualizations)
     }
     
-    private static func visualizations(for trackId: Int) -> TrackVisualizations {
-        var v = [Int: [TrackVisualizationValue]]()
+    private func visualizations(for trackId: Int) async -> TrackVisualizations {
+        var v = [TrackVisualizationZoomLevel]()
         for level in visualizationLevels {
-            if let jsonData = json(trackId: trackId, visualizationLevel: level) {
-                
-                if let blogPosts: [TrackVisualizationValue] = try? JSONDecoder().decode([TrackVisualizationValue].self, from: jsonData) {
-                    v[level] = blogPosts
-                }
+            if let values = values(trackId: trackId, visualizationLevel: level) {
+                v.append(.init(zoomLevel: level, values: values))
             }
         }
         
         return .init(visualizations: v)
     }
     
-    private static func json(trackId: Int, visualizationLevel: Int) -> Data? {
+    private func values(trackId: Int, visualizationLevel: Int) -> [TrackVisualizationValue]? {
         let asset = "TrackVisualizations/\(trackId)/\(visualizationLevel)"
         if let asset = NSDataAsset(name: asset, bundle: Bundle.main) {
-            return asset.data
+            return try? JSONDecoder().decode([TrackVisualizationValue].self, from: asset.data)
         }
-        else {
-            print("Asset \(asset) not found")
-        }
-        
+
+        print("Asset \(asset) not found")
         return nil
     }
 }
 
 fileprivate let visualizationLevels = [1, 2, 4, 6, 12, 18, 25, 30, 45, 50, 70, 90]
 
-fileprivate var tracks: [Int: (name: String, length: TimeInterval)] = [
+fileprivate var tracksDatabase: [Int: (name: String, length: TimeInterval)] = [
     1: ("Always Look On the Bright Side of Life",  2.min +  8.sec),
     2: ("Blinn Ulof",                              4.min +  4.sec),
     3: ("Bjekkergauken",                           2.min + 34.sec),

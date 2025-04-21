@@ -46,7 +46,7 @@ struct ContentView: View {
     }
     
     private func loadTracks() async {
-        mixes = await TrackRepository   .getMixes()
+        mixes = await TrackRepository().getMixes()
     }
 }
 

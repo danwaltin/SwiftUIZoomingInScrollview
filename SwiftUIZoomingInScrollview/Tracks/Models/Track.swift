@@ -10,7 +10,7 @@ import Foundation
 struct Track: Identifiable {
     let id: Int
     let name: String
-    let startPosition: Double
+    var startPosition: Double = 0
     let length: TimeInterval
     
     let visualizations: TrackVisualizations
