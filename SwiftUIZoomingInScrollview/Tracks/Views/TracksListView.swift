@@ -7,7 +7,9 @@
 
 import SwiftUI
 
+fileprivate let timelineHeight: Double = 20
 fileprivate let tracksHeight: Double = 150
+fileprivate let headerWidth: Double = 100
 
 struct TracksListView: View {
     let tracks: [Track]
@@ -35,7 +37,7 @@ struct TracksListView: View {
         GeometryReader { g in
             let heightBelowTracks = max(0, g.size.height - (Double(tracks.count) * tracksHeight))
             
-            let widthRightOfTracks = max(0, g.size.width - tracksWidth)
+            let widthRightOfTracks = max(0, g.size.width - tracksWidth - headerWidth)
 
             
             ScrollView([.horizontal, .vertical]) {
@@ -44,12 +46,15 @@ struct TracksListView: View {
                         TrackRowView(
                             track: $0,
                             height: tracksHeight,
-                            zoom: zoom.value)
+                            zoom: zoom.value,
+                            headerWidth: headerWidth,
+                            headerOffset: scrollOffsetX + scrollData.viewPosition.x)
                     }
                     Rectangle()
                         .foregroundStyle(.clear)
-                        .frame(width: tracksWidth + widthRightOfTracks, height: heightBelowTracks)
+                        .frame(height: heightBelowTracks)
                 }
+                .frame(width: headerWidth + tracksWidth + widthRightOfTracks)
                 .offset(x: -scrollOffsetX)
             }
             .gesture(pinchToZoom)
@@ -102,7 +107,9 @@ struct TracksListView: View {
                     zoomAnchorViewPortOffset = scrollData.viewPosition.x + value.startLocation.x
                 }
                 
-                zoom.changeZoom(to: value.magnification * pinchStart)
+                if value.magnification > 0 {
+                    zoom.changeZoom(to: value.magnification * pinchStart)
+                }
             }
             .onEnded { _ in
                 pinchStart = 0

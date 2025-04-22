@@ -7,14 +7,23 @@
 
 import SwiftUI
 
+
 struct TrackRowView: View {
     let track: Track
     let height: Double
     let zoom: Double
-
+    let headerWidth: Double
+    let headerOffset: Double
+    
     var body: some View {
-        TrackView(track: track, zoom: zoom)
-            .frame(height: height)
+        HStack(spacing: 0) {
+            Text(track.name)
+                .frame(width: headerWidth, height: height)
+                .border(Color.blue)
+                .offset(x: headerOffset)
+            TrackView(track: track, zoom: zoom)
+                .frame(height: height)
+        }
 
     }
 }
